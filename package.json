@@ -1,0 +1,27 @@
+{
+  "name": "hosts-etc",
+  "version": "1.0.0",
+  "description": "Manages your system host file in a more productive way!",
+  "main": "hosts-etc.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheBrenny/hosts-etc.git"
+  },
+  "keywords": [
+    "hosts",
+    "/etc/hosts",
+    "hostfile",
+    "local",
+    "dns",
+    "hostman"
+  ],
+  "author": "TheBrenny <iam@justbrenny.me>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TheBrenny/hosts-etc/issues"
+  },
+  "homepage": "https://github.com/TheBrenny/hosts-etc#readme"
+}
