@@ -61,6 +61,9 @@ let mcWorlds = [
 ];
 hosts.set(mcWorlds);
 
+// or remove a host/region/ip regex!
+hosts.remove("#mc worlds");
+
 ```
 
 ### Regions
