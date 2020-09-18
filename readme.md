@@ -7,7 +7,7 @@ What it can do though, is make it look like the hosts file is organised through 
 ## Installation
 
 ```console
-npm install --save hosts-etc
+$ npm install --save hosts-etc
 ```
 
 ## Usage
