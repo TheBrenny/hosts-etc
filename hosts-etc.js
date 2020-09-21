@@ -3,6 +3,7 @@ const fs = require('fs');
 const HOSTS = process.platform === "win32" ? "C:/Windows/System32/drivers/etc/hosts" : "/etc/hosts";
 
 let hostsCache = null;
+let cache = true;
 
 class Host {
     constructor(host, address, opts) {
@@ -23,6 +24,11 @@ class Host {
     }
 }
 
+module.exports.useCache = function (c) {
+    if(typeof c === "undefined") c = true;
+    cache = c;
+    return module.exports;
+};
 module.exports.HOSTS = HOSTS;
 module.exports.Host = Host;
 module.exports.hostifyData = function (hosts) {
@@ -82,7 +88,7 @@ module.exports.get = function (query) {
 
     // Gets all hosts into a JSON *object*!
     function getAllHosts(lines) {
-        if (hostsCache) return hostsCache;
+        if (hostsCache && cache) return hostsCache;
 
         let regionStart = /^[ \t]*#[ \t]*region +(.+?)[ \t]*$/gm;
         let regionEnd = /^[ \t]*#[ \t]*end region[ \t]*$/gm;

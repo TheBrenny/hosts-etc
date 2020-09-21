@@ -64,6 +64,11 @@ hosts.set(mcWorlds);
 // or remove a host/region/ip regex!
 hosts.remove("#mc worlds");
 
+// By default, a cache will be saved to limit the amount of reads to the same file,
+//   but this cache can be ignored by doing the following. This is handy if you the
+//   hosts file is altered while an instance of hosts-etc is running.
+hosts.useCache(false);
+hosts.useCache(); // this turns cache on, despite the current cache state!
 ```
 
 ### Regions
