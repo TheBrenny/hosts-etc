@@ -1,6 +1,6 @@
 {
   "name": "hosts-etc",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Manages your system host file in a more productive way!",
   "main": "hosts-etc.js",
   "scripts": {
