@@ -24,28 +24,6 @@ class Host {
     }
 }
 
-class Redirect {
-    constructor(host, redirect, opts) {
-        opts = opts || {};
-        this.host = host;
-        this.redirect = redirect;
-        this.region = opts.region || "";
-        this.comment = opts.comment || "";
-    }
-
-    makeJSON() {
-        let r = {
-            "host": this.host,
-            "redirect": this.redirect,
-            "comment": this.comment,
-        };
-        if (this.region == "") return r;
-        return {
-            [this.comment]: r
-        };
-    }
-}
-
 module.exports.useCache = function (c) {
     if (typeof c === "undefined") c = true;
     cache = c;
@@ -78,6 +56,19 @@ module.exports.get = function (query) {
     } else if (query.startsWith("#")) { // get region only
         let region = query.slice(1).trim();
         out[region] = regions[region] || [];
+    } else if (query.startsWith("c#")) { // get comment equals
+        let comment = query.slice(2).trim();
+
+        for (let r in regions) {
+            // regions[r] = region object == array of hosts
+            for (let h of regions[r]) {
+                // h = host object
+                if (h.comment === comment) {
+                    out[r] = out[r] || [];
+                    out[r].push(h);
+                }
+            }
+        }
     } else if (rx.test(query)) { // get IPs
         let ips = [...query.matchAll(rx)][0].slice(1);
         rx = new RegExp(ips.map(ip => ip === "x" ? "\\d{1,3}" : ip + "").join("."));
@@ -194,6 +185,13 @@ module.exports.remove = function (query) {
         let region = query.slice(1).trim();
         updated += out[region].length;
         delete out[region];
+    } else if (query.startsWith("c#")) { // remove comment equals
+        let comment = query.slice(2).trim();
+        for (let r in hosts) {
+            out[r] = out[r].filter(host => host.comment !== comment); // jshint ignore:line
+            updated += (hosts[r].length - out[r].length);
+            if (out[r].length === 0) delete out[r];
+        }
     } else if (rx.test(query)) { // remove IPs
         let ips = [...query.matchAll(rx)][0].slice(1);
         rx = new RegExp(ips.map(ip => ip === "x" ? "\\d{1,3}" : ip + "").join("\\."));
