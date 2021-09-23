@@ -46,11 +46,11 @@ module.exports.get = function (query) {
     if(typeof query === 'undefined') query = "";
     query = (query || "").toString();
 
-    let lines = getFileContents().replace(/\\r\\n/g, "\n").split("\n");
+    let lines = getFileContents().replace(/\r\n/g, "\n").split("\n");
     let regions = getAllHosts(lines);
     let out = {};
 
-    let rx = /(\d{1,3}|x)\.(\d{1,3}|x)\.(\d{1,3}|x)\.(\d{1,3}|x)/;
+    let rx = /((\d{1,3}|x)\.(\d{1,3}|x)\.(\d{1,3}|x)\.(\d{1,3}|x)|::1)/;
     if(query == "") { // get all
         out = regions;
     } else if(query.startsWith("#")) { // get region only
@@ -70,8 +70,8 @@ module.exports.get = function (query) {
             }
         }
     } else if(rx.test(query)) { // get IPs
-        let ips = [...query.matchAll(rx)][0].slice(1);
-        rx = new RegExp(ips.map(ip => ip === "x" ? "\\d{1,3}" : ip + "").join("."));
+        let ips = query.match(rx)[0];
+        rx = new RegExp(ips.replace(/x/g, "\\d{1,3}"));
 
         for(let r in regions) {
             // r = region object == array of hosts
@@ -105,11 +105,13 @@ module.exports.get = function (query) {
 
         let regionStart = /^[ \t]*#[ \t]*region +(.+?)[ \t]*$/gm;
         let regionEnd = /^[ \t]*#[ \t]*end region[ \t]*$/gm;
-        let hostsRx = /^[ \t]*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})[ \t]+?(\S+?)[ \t]*(#.*)?$/gm;
+        let hostsRx = /^[ \t]*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|::1)[ \t]+?(\S+?)[ \t]*(#.*)?$/gm;
         let region = [];
         let out = {};
 
         for(let line of lines) {
+            if(line === "") continue;
+
             // Region End
             if(regionEnd.test(line)) {
                 region.pop();
@@ -175,35 +177,45 @@ module.exports.set = function (host) {
     }
 };
 
+const filters = {
+    comment: (comment, host) => host.comment !== comment,
+    ip: (rx, host) => !rx.test(host.address),
+    host: (query, host) => host.host !== query
+};
 module.exports.remove = function (query) {
     let updated = 0;
     let hosts = this.get();
     let out = Object.assign({}, hosts);
 
-    let rx = /(\d{1,3}|x)\.(\d{1,3}|x)\.(\d{1,3}|x)\.(\d{1,3}|x)/;
+    let rx = /((\d{1,3}|x)\.(\d{1,3}|x)\.(\d{1,3}|x)\.(\d{1,3}|x)|::1)/;
     if(query.startsWith("#")) { // remove region
         let region = query.slice(1).trim();
         updated += out[region].length;
         delete out[region];
     } else if(query.startsWith("c#")) { // remove comment equals
-        let comment = query.slice(2).trim();
+        const comment = query.slice(2).trim();
+        const filter = filters.comment.bind(null, comment);
+
         for(let r in hosts) {
-            out[r] = out[r].filter(host => host.comment !== comment); // jshint ignore:line
+            out[r] = out[r].filter(filter);
             updated += (hosts[r].length - out[r].length);
             if(out[r].length === 0) delete out[r];
         }
     } else if(rx.test(query)) { // remove IPs
-        let ips = [...query.matchAll(rx)][0].slice(1);
-        rx = new RegExp(ips.map(ip => ip === "x" ? "\\d{1,3}" : ip + "").join("\\."));
+        let ips = query.match(rx)[0];
+        rx = new RegExp(ips.replace(/x/g, "\\d{1,3}"));
+        const filter = filters.ip.bind(null, rx);
 
         for(let r in hosts) {
-            out[r] = out[r].filter(host => !rx.test(host.address)); // jshint ignore:line
+            out[r] = out[r].filter(filter);
             updated += (hosts[r].length - out[r].length);
             if(out[r].length === 0) delete out[r];
         }
     } else { // Matching hostname
+        const filter = filters.host.bind(null, query);
+
         for(let r in hosts) {
-            out[r] = out[r].filter(host => host.host !== query); // jshint ignore:line
+            out[r] = out[r].filter(filter);
             updated += (hosts[r].length - out[r].length);
             if(out[r].length === 0) delete out[r];
         }
@@ -231,6 +243,7 @@ module.exports.promise.Host = Host;
 module.exports.promise.hostifyData = async function (hosts) {
     return Promise.resolve(module.exports.hostifyData(hosts));
 };
+// TODO: Actually convert these to use promises, not just a promise wrapper around sync methods!
 module.exports.promise.get = async function (query) {
     return new Promise((res, rej) => {
         try {
